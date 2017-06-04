@@ -132,7 +132,7 @@ class trainer(object):
         self.optimizationResults = _res
 
 N = NN()
-
+#A
 
 def computeNumericalGradient(N, X, Y):
     paramsInitial = N.getParams()

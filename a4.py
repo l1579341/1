@@ -1,14 +1,18 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import optimize
+from sklearn.datasets import fetch_mldata
 
-#X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]], dtype = float) #dane wejsciowe
-#Y = np.array([[0,1,1,0]], dtype = float).T
 
-X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]], dtype = float) #dane wejsciowe
-Y = np.array([[1,0], [0,1], [0,1], [1,0]], dtype = float)
-A = np.array([[0, 0], [0, 1], [1, 0], [1, 1]], dtype = float) #dane wejsciowe
-B = np.array([[1,0], [0,1], [0,1], [1,0]], dtype = float)
+"""X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]], dtype = 'float32') #dane wejsciowe
+Y = np.array([[1,0], [0,1], [0,1], [1,0]], dtype = 'float32')
+A = np.array([[0, 0], [0, 1], [1, 0], [1, 1]], dtype = 'float32') #dane wejsciowe
+B = np.array([[1,0], [0,1], [0,1], [1,0]], dtype = 'float32')"""
+
+X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]], dtype = 'float32') #dane wejsciowe
+Y = np.array([[0], [1], [1], [0]], dtype = 'int8')
+A = np.array([[0, 0], [0, 1], [1, 0], [1, 1]], dtype = 'float32') #dane wejsciowe
+B = np.array([[0], [1], [1], [0]], dtype = 'int8')
 
 """X = np.array(([3, 5], [5, 1], [10, 2], [6,1.5]), dtype=float)
 Y = np.array(([75], [82], [93], [70]), dtype=float)
@@ -25,14 +29,19 @@ Y = np.array(([[76, 17.5, 2.5, 27.5, 62.5, 40, 50, 52.5, 4, 15]]), dtype=float).
 A = np.array(([[9,5,6], [4,9,1], [1,2,4], [5,8,2], [8,3,2], [7,4,8], [7,6,5], [3,8,5], [2,5,1], [4,4,5]]), dtype=float)
 B = np.array(([[42, 64, 13.5, 58.5, 37, 28.5, 45.5, 48.5, 38, 28.5]]), dtype=float).T"""
 
+"""mnist = fetch_mldata('MNIST original')
+X = mnist.data[0:60000,:].astype('float32')
+Y = mnist.target[:60000]
+
+a2 = mnist.data[60000:,:].astype('float32')
+b2 = mnist.target[60000:]"""
+
 S = 1
 S1 = 1
 
 Xn = X / S
-Yn = Y / S1
-
-print(B)
-An = A
+Yn = Y
+An = A / S
 Bn = B
 
 class NN(object):  #self oznacza ze zmienna jest dostepna globalnie
@@ -42,10 +51,10 @@ class NN(object):  #self oznacza ze zmienna jest dostepna globalnie
         self.O = 2  # ilosc wyjsc
         self.S = 4 # ilosc probek
         self.n = 0.1 #tempo uczenia sie
-        self.n1 = 0.00001
+        self.n1 = 0.001
         self.act = 1 # 0-sig 1-tanh 2-relu
-        self.W1 = np.random.randn(self.I, self.L) / np.sqrt(self.I/1)
-        self.W2 = np.random.randn(self.L, self.O) / np.sqrt(self.L/1)
+        self.W1 = np.random.randn(self.I, self.L).astype('float32') / np.sqrt(self.I/1)
+        self.W2 = np.random.randn(self.L, self.O).astype('float32') / np.sqrt(self.L/1)
         self.B1 = np.zeros((1, self.L))
         self.B2 = np.zeros((1, self.O))
         self.layer = np.zeros((self.S, self.L))
@@ -67,28 +76,35 @@ class NN(object):  #self oznacza ze zmienna jest dostepna globalnie
             z[z <= 0] = 0
             z[z > 0] = 1
             return z
+
     def forward(self, In):
-        self.layer = np.dot(In, self.W1) + self.B1
-        self.layerS = self.sigmoid(self.layer)
-        self.output = np.dot(self.layerS, self.W2) + self.B2
-        self.outputS = self.sigmoid(self.output)
-        return self.outputS
+        self.hidden_layer = np.maximum(0, np.dot(In, self.W1) + self.B1)  # note, ReLU activation
+        self.scores = np.dot(self.hidden_layer, self.W2) + self.B2
+        exp_scores = np.exp(self.scores)
+        self.probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)  # [N x K]
+        return self.scores
     def lossCalc(self, y):
-        self.loss = 0.5 * np.sum((y - self.outputS) ** 2) + 0.5*self.n1*(np.sum(self.W2 ** 2) + np.sum(self.W1 ** 2))
+        corect_logprobs = -np.log(self.probs[range(self.S), y.T])
+        data_loss = np.sum(corect_logprobs) / self.S
+        reg_loss = 0.5 * self.n1 * np.sum(self.W1 * self.W1) + 0.5 * self.n1 * np.sum(self.W2 * self.W2)
+        self.loss = data_loss + reg_loss
         return self.loss
     def backprop(self, In, y):
-        deltaO = np.multiply((self.outputS - y), self.sigmoidPrime(self.output))
-        self.dW2 = np.dot(self.layerS.T, deltaO) + self.n1*self.W2
-        delta2 = np.dot(deltaO, self.W2.T) * self.sigmoidPrime(self.layer)
-        self.dW1 = np.dot(In.T, delta2) + self.n1*self.W1
-
-        dB2 = np.sum(deltaO)
-        dB1 = delta2.sum(axis=0)
-        self.W1 = self.W1 - self.n * self.dW1
-        self.W2 = self.W2 - self.n * self.dW2
-        self.B1 = self.B1 - self.n * dB1
-        self.B2 = self.B2 - self.n * dB2
-        #print(self.B2)
+        dscores = self.probs
+        dscores[range(self.S), y.T] -= 1
+        dscores /= self.S
+        self.dW2 = np.dot(self.hidden_layer.T, dscores)
+        db2 = np.sum(dscores, axis=0, keepdims=True)
+        dhidden = np.dot(dscores, self.W2.T)
+        dhidden[self.hidden_layer <= 0] = 0
+        self.dW1 = np.dot(In.T, dhidden)
+        db = np.sum(dhidden, axis=0, keepdims=True)
+        self.dW2 += self.n1 * self.W2
+        self.dW1 += self.n1 * self.W1
+        self.W1 += -self.n * self.dW1
+        self.B1 += -self.n * db
+        self.W2 += -self.n * self.dW2
+        self.B2 += -self.n * db2
     def getParams(self):
         params = np.concatenate((self.W1.ravel(), self.W2.ravel()))
         return params
@@ -100,6 +116,7 @@ class NN(object):  #self oznacza ze zmienna jest dostepna globalnie
         self.W2 = np.reshape(params[W1_end:W2_end], (self.L, self.O))
     def computeGradients(self, X, y):
         self.forward(X)
+        self.lossCalc(y)
         self.backprop(X, y)
         return np.concatenate((self.dW1.ravel(), self.dW2.ravel()))
 
@@ -132,7 +149,7 @@ class trainer(object):
         self.optimizationResults = _res
 
 N = NN()
-#A
+
 
 def computeNumericalGradient(N, X, Y):
     paramsInitial = N.getParams()
@@ -171,7 +188,7 @@ def classicalTrain(a, b, c = 100):
             print("loss on test data: % f: " % (N.loss))
         i += 1
     N.forward(Xn)
-    print(N.outputS * S1)
+    #print(N.outputS * S1)
     list = np.minimum(c, list)
     list1 = np.minimum(c, list1)
     print("Sprawdzenie algorytmu: ", computeNumericalGradient(N, Xn, Yn))
@@ -217,7 +234,7 @@ def Plot3d():
     ax.set_xlabel('x1')
     ax.set_ylabel('x2')
     ax.set_zlabel('y')
-classicalTrain(1000,100,1)
+classicalTrain(10000,1000)
 #newTrain()
 #print(N.forward([0.3, 0.5]))
 #Plot3d()

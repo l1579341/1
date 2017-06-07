@@ -19,11 +19,11 @@ Bn = B
 class NN(object):  # self oznacza ze zmienna jest dostepna globalnie
     def __init__(self):
         self.I = 784  # ilosc wejsc
-        self.L = 100  # ilosc neuronow w ukrytej warstwie
+        self.L = 200  # ilosc neuronow w ukrytej warstwie
         self.O = 10  # ilosc wyjsc
         self.S = 60000  # ilosc probek
-        self.n = 0.1  # tempo uczenia sie
-        self.n1 = 0.001  # temp regularyzacjiwagi na
+        self.n = 0.2  # tempo uczenia sie
+        self.n1 = 0.01  # temp regularyzacjiwagi na
         self.W1 = np.random.randn(self.I, self.L).astype('float32') / np.sqrt(self.I / 1)  # losowe  1 warstwie
         self.W2 = np.random.randn(self.L, self.O).astype('float32') / np.sqrt(self.L / 1)  # losowe  1 warstwie
         self.B1 = np.zeros((1, self.L))  # deklaracja pustej tablicy bias1
@@ -60,9 +60,6 @@ class NN(object):  # self oznacza ze zmienna jest dostepna globalnie
         self.B2 += -self.n * db2
 
 
-N = NN()
-
-
 def save(w1, w2, b1, b2):
     np.save('weights1.npy', w1)
     np.save('weights2.npy', w2)
@@ -84,8 +81,7 @@ def readPic():
     x = (np.average(face, axis=2))
     return np.reshape(x, 28 ** 2)
 
-
-def classicalTrain(a, b, c=100):
+def classicalTrain(N, a, b, c=100):
     list = []
     list1 = []
     i = 0
@@ -116,22 +112,26 @@ def classicalTrain(a, b, c=100):
     plt.grid(1)
 
 
-def main():
+def loop():
+    N = NN()
     while True:
         print(" press 1 to learn\n press 2 to test\n press 3 to save wages\n press 4 to read wages")
         print(" press q to exit\n")
         d = input()
         if d == '1':
             print("ile rund?")
-            e = int(input())
+            ilosc = int(input())
             print("co ile wyswietlac wynik?")
             f = int(input())
-            classicalTrain(e, f)
+            classicalTrain(N, ilosc, f)
+            plt.show()
         if d == '2':
             Q = readPic()
+            Q /= 255
             N.forward(Q)
             e = np.argsort(-N.output)
             print(e)
+            print(N.output)
         if d == '3':
             save(N.W1, N.W2, N.B1, N.B2)
             print("saved")
@@ -141,6 +141,4 @@ def main():
         if d == 'q':
             break
 
-
-main()
-plt.show()
+loop()

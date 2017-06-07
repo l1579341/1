@@ -17,12 +17,12 @@ An = A / S
 Bn = B
 
 ilosc = 10
-freq = 10
+freq = 1
 
 class NN(object):  # self oznacza ze zmienna jest dostepna globalnie
     def __init__(self):
         self.I = 784  # ilosc wejsc
-        self.L = 100  # ilosc neuronow w ukrytej warstwie
+        self.L = 200  # ilosc neuronow w ukrytej warstwie
         self.O = 10  # ilosc wyjsc
         self.S = 60000  # ilosc probek
         self.n = 0.1  # tempo uczenia sie
@@ -130,6 +130,7 @@ def loop():
             plt.show()
         if d == '2':
             Q = readPic()
+            Q /= 255
             N.forward(Q)
             e = np.argsort(-N.output)
             print(e)
@@ -143,32 +144,51 @@ def loop():
             break
 
 def display(N):
-    print(ilosc, freq, N.L, N.n, N.n1)
+    print(ui.lineEdit_9.text())
 
 def il_neur(N):
-    N.L = ui.lineEdit_7.displayText()
+    N.L = ui.lineEdit_7.text()
 def lern_spd(N):
-    N.n = ui.lineEdit_8.displayText()
+    N.n = ui.lineEdit_8.text()
 def reg_spd(N):
-    N.n1 = ui.lineEdit_9.displayText()
+    N.n1 = ui.lineEdit_9.text()
 def ilosc1():
     global ilosc
-    ilosc = ui.lineEdit_2.displayText()
+    ilosc = ui.lineEdit_2.text()
 def freq1():
     global freq
-    freq = ui.lineEdit_3.displayText()
+    freq = ui.lineEdit_3.text()
+def save1(N):
+    save(N.W1, N.W2, N.B1, N.B2)
+    print("saved")
+def load1(N):
+    N.W1, N.W2, N.B1, N.B2 = load()
+    print("read")
+def train(N):
+    classicalTrain(N, ilosc, freq)
+    plt.show()
+def test(N):
+    Q = readPic()
+    Q /= 255
+    N.forward(Q)
+    e = np.argsort(-N.output)
+    ui.label_13.setText(str(e[0,0]))
+    ui.label_15.setText(str(e[0,1]) + ", " + str(e[0,2])  + ", " + str(e[0,3]))
+    print(e)
+
 
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(768, 506)
+        MainWindow.resize(768, 448)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.label = QtWidgets.QLabel(self.centralwidget)
-        self.label.setGeometry(QtCore.QRect(10, 10, 231, 201))
+        self.label.setGeometry(QtCore.QRect(10, 10, 200, 200))
         self.label.setText("")
-        self.label.setPixmap(QtGui.QPixmap("../Desktop/Bez.jpg"))
+        pixmap = QtGui.QPixmap("Bez.jpg").scaled(200, 200, QtCore.Qt.IgnoreAspectRatio, QtCore.Qt.FastTransformation)
+        self.label.setPixmap(pixmap)
         self.label.setScaledContents(True)
         self.label.setObjectName("label")
         self.label_2 = QtWidgets.QLabel(self.centralwidget)
@@ -178,10 +198,10 @@ class Ui_MainWindow(object):
         self.label_3.setGeometry(QtCore.QRect(470, 10, 171, 21))
         self.label_3.setObjectName("label_3")
         self.label_5 = QtWidgets.QLabel(self.centralwidget)
-        self.label_5.setGeometry(QtCore.QRect(560, 440, 201, 21))
+        self.label_5.setGeometry(QtCore.QRect(550, 390, 201, 21))
         self.label_5.setObjectName("label_5")
         self.gridLayoutWidget = QtWidgets.QWidget(self.centralwidget)
-        self.gridLayoutWidget.setGeometry(QtCore.QRect(480, 80, 279, 83))
+        self.gridLayoutWidget.setGeometry(QtCore.QRect(480, 40, 279, 141))
         self.gridLayoutWidget.setObjectName("gridLayoutWidget")
         self.gridLayout = QtWidgets.QGridLayout(self.gridLayoutWidget)
         self.gridLayout.setContentsMargins(0, 0, 0, 0)
@@ -201,24 +221,38 @@ class Ui_MainWindow(object):
         self.pushButton_7 = QtWidgets.QPushButton(self.gridLayoutWidget)
         self.pushButton_7.setObjectName("pushButton_7")
         self.gridLayout.addWidget(self.pushButton_7, 1, 2, 1, 1)
-        self.pushButton_6 = QtWidgets.QPushButton(self.gridLayoutWidget)
-        self.pushButton_6.setObjectName("pushButton_6")
-        self.gridLayout.addWidget(self.pushButton_6, 0, 2, 1, 1)
         self.pushButton_8 = QtWidgets.QPushButton(self.gridLayoutWidget)
         self.pushButton_8.setObjectName("pushButton_8")
         self.gridLayout.addWidget(self.pushButton_8, 2, 0, 1, 3)
+        self.pushButton_9 = QtWidgets.QPushButton(self.gridLayoutWidget)
+        self.pushButton_9.setObjectName("pushButton_9")
+        self.gridLayout.addWidget(self.pushButton_9, 3, 0, 1, 3)
+        self.pushButton_6 = QtWidgets.QPushButton(self.gridLayoutWidget)
+        self.pushButton_6.setObjectName("pushButton_6")
+        self.gridLayout.addWidget(self.pushButton_6, 0, 2, 1, 1)
+        self.pushButton_10 = QtWidgets.QPushButton(self.gridLayoutWidget)
+        self.pushButton_10.setObjectName("pushButton_10")
+        self.gridLayout.addWidget(self.pushButton_10, 4, 0, 1, 3)
         self.gridLayoutWidget_2 = QtWidgets.QWidget(self.centralwidget)
         self.gridLayoutWidget_2.setGeometry(QtCore.QRect(10, 210, 231, 41))
         self.gridLayoutWidget_2.setObjectName("gridLayoutWidget_2")
         self.gridLayout_3 = QtWidgets.QGridLayout(self.gridLayoutWidget_2)
         self.gridLayout_3.setContentsMargins(0, 0, 0, 0)
         self.gridLayout_3.setObjectName("gridLayout_3")
+        self.label_13 = QtWidgets.QLabel(self.gridLayoutWidget_2)
+        self.label_13.setText("")
+        self.label_13.setObjectName("label_13")
+        self.gridLayout_3.addWidget(self.label_13, 0, 1, 1, 1)
         self.label_9 = QtWidgets.QLabel(self.gridLayoutWidget_2)
         self.label_9.setObjectName("label_9")
         self.gridLayout_3.addWidget(self.label_9, 0, 0, 1, 1)
-        self.lineEdit_6 = QtWidgets.QLineEdit(self.gridLayoutWidget_2)
-        self.lineEdit_6.setObjectName("lineEdit_6")
-        self.gridLayout_3.addWidget(self.lineEdit_6, 0, 1, 1, 1)
+        self.label_14 = QtWidgets.QLabel(self.gridLayoutWidget_2)
+        self.label_14.setObjectName("label_14")
+        self.gridLayout_3.addWidget(self.label_14, 1, 0, 1, 1)
+        self.label_15 = QtWidgets.QLabel(self.gridLayoutWidget_2)
+        self.label_15.setText("")
+        self.label_15.setObjectName("label_15")
+        self.gridLayout_3.addWidget(self.label_15, 1, 1, 1, 1)
         self.gridLayoutWidget_3 = QtWidgets.QWidget(self.centralwidget)
         self.gridLayoutWidget_3.setGeometry(QtCore.QRect(10, 290, 261, 121))
         self.gridLayoutWidget_3.setObjectName("gridLayoutWidget_3")
@@ -253,7 +287,7 @@ class Ui_MainWindow(object):
         self.pushButton_4.setObjectName("pushButton_4")
         self.gridLayout_4.addWidget(self.pushButton_4, 2, 2, 1, 1)
         self.gridLayoutWidget_4 = QtWidgets.QWidget(self.centralwidget)
-        self.gridLayoutWidget_4.setGeometry(QtCore.QRect(250, 80, 201, 80))
+        self.gridLayoutWidget_4.setGeometry(QtCore.QRect(250, 40, 201, 80))
         self.gridLayoutWidget_4.setObjectName("gridLayoutWidget_4")
         self.gridLayout_5 = QtWidgets.QGridLayout(self.gridLayoutWidget_4)
         self.gridLayout_5.setContentsMargins(0, 0, 0, 0)
@@ -275,9 +309,6 @@ class Ui_MainWindow(object):
         self.menubar.setGeometry(QtCore.QRect(0, 0, 768, 21))
         self.menubar.setObjectName("menubar")
         MainWindow.setMenuBar(self.menubar)
-        self.statusbar = QtWidgets.QStatusBar(MainWindow)
-        self.statusbar.setObjectName("statusbar")
-        MainWindow.setStatusBar(self.statusbar)
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -293,9 +324,12 @@ class Ui_MainWindow(object):
         self.label_8.setText(_translate("MainWindow", "CZĘSTOTLIWOŚĆ RAPORTU"))
         self.lineEdit_3.setText(_translate("MainWindow", "1"))
         self.pushButton_7.setText(_translate("MainWindow", "ZATWIERDŹ"))
-        self.pushButton_6.setText(_translate("MainWindow", "ZATWIERDŹ"))
         self.pushButton_8.setText(_translate("MainWindow", "START TRENING"))
+        self.pushButton_9.setText(_translate("MainWindow", "WCZYTAJ WAGI Z PLIKU"))
+        self.pushButton_6.setText(_translate("MainWindow", "ZATWIERDŹ"))
+        self.pushButton_10.setText(_translate("MainWindow", "ZAPISZ WAGI DO PLIKU"))
         self.label_9.setText(_translate("MainWindow", "PRZEWIDYWANY WYNIK"))
+        self.label_14.setText(_translate("MainWindow", "INNE PRAWDOBNE WYNIKI:"))
         self.label_10.setText(_translate("MainWindow", "ILOŚĆ NEURONÓW"))
         self.lineEdit_8.setText(_translate("MainWindow", "0.1"))
         self.lineEdit_9.setText(_translate("MainWindow", "0.001"))
@@ -309,13 +343,15 @@ class Ui_MainWindow(object):
         self.label_4.setText(_translate("MainWindow", "ŚCIEŻKA:"))
         self.pushButton_5.setText(_translate("MainWindow", "ZATWIERDŹ"))
 
-
+        self.pushButton.clicked.connect(lambda: test(N))
         self.pushButton_2.clicked.connect(lambda: il_neur(N))
         self.pushButton_3.clicked.connect(lambda: lern_spd(N))
         self.pushButton_4.clicked.connect(lambda: reg_spd(N))
         self.pushButton_6.clicked.connect(lambda: ilosc1())
         self.pushButton_7.clicked.connect(lambda: freq1())
-
+        self.pushButton_8.clicked.connect(lambda: train(N))
+        self.pushButton_9.clicked.connect(lambda: load1(N))
+        self.pushButton_10.clicked.connect(lambda: save1(N))
 
         self.pushButton_5.clicked.connect(lambda: display(N))
 
